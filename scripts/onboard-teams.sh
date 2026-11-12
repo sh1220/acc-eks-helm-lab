@@ -11,6 +11,8 @@ SERVER=$(kubectl config view --minify -o jsonpath='{.clusters[0].cluster.server}
 CA=$(kubectl config view --minify --raw -o jsonpath='{.clusters[0].cluster.certificate-authority-data}')
 mkdir -p out
 
+kubectl apply -f k8s/cluster-policy.yaml
+
 for i in $TEAMS; do
   NS=container-$i
   sed "s/TEAM/$NS/g" k8s/team.yaml | kubectl apply -f -

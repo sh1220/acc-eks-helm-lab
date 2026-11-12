@@ -1,0 +1,40 @@
+# 팀 네임스페이스(acc.club/team=true) 공통 검사. 클러스터에 1번만 적용 (scripts/onboard-teams.sh 가 적용)
+# ① Service externalIPs 금지: edit 권한으로 다른 팀/외부 IP 트래픽을 가로챌 수 있음 (CVE-2020-8554)
+# ② Ingress path 는 /<자기 네임스페이스> 로만: 공용 ALB 에서 남의 경로나 / 를 가로채지 못하게
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: acc-team-guardrails
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    namespaceSelector:
+      matchLabels: { acc.club/team: "true" }
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["services"]
+      - apiGroups: ["networking.k8s.io"]
+        apiVersions: ["v1"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["ingresses"]
+  validations:
+    - expression: "object.kind != 'Service' || !has(object.spec.externalIPs) || size(object.spec.externalIPs) == 0"
+      message: "Service externalIPs 는 사용할 수 없습니다"
+    - expression: "object.kind != 'Ingress' || !has(object.spec.defaultBackend)"
+      message: "Ingress defaultBackend 는 사용할 수 없습니다. rules 의 path 를 쓰세요"
+    - expression: >-
+        object.kind != 'Ingress' || !has(object.spec.rules) ||
+        object.spec.rules.all(r, !has(r.http) || r.http.paths.all(p,
+          has(p.path) && (p.path == '/' + namespaceObject.metadata.name ||
+                          p.path.startsWith('/' + namespaceObject.metadata.name + '/'))))
+      messageExpression: "'Ingress path 는 /' + namespaceObject.metadata.name + ' 로 시작해야 합니다'"
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: acc-team-guardrails
+spec:
+  policyName: acc-team-guardrails
+  validationActions: [Deny]

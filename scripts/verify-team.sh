@@ -31,4 +31,36 @@ else
   echo "OK   privileged Pod 거부"
 fi
 
+reject() { # reject <설명> <매니페스트>: 서버가 거부해야 OK
+  if printf '%s\n' "$2" | kubectl apply --dry-run=server -f - >/dev/null 2>&1; then
+    echo "FAIL $1 가 허용됨"; fail=1
+  else
+    echo "OK   $1 거부"
+  fi
+}
+
+reject "Service externalIPs" "apiVersion: v1
+kind: Service
+metadata: { name: verify-extip }
+spec: { ports: [{ port: 80 }], externalIPs: [1.2.3.4] }"
+
+reject "다른 팀 path($OTHER) Ingress" "apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata: { name: verify-path }
+spec:
+  ingressClassName: alb
+  rules: [{ http: { paths: [{ path: /$OTHER, pathType: Prefix, backend: { service: { name: x, port: { number: 80 } } } }] } }]"
+
+if printf '%s\n' "apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata: { name: verify-path }
+spec:
+  ingressClassName: alb
+  rules: [{ http: { paths: [{ path: /$NS, pathType: Prefix, backend: { service: { name: x, port: { number: 80 } } } }] } }]" \
+   | kubectl apply --dry-run=server -f - >/dev/null 2>&1; then
+  echo "OK   자기 path(/$NS) Ingress 허용"
+else
+  echo "FAIL 자기 path(/$NS) Ingress 가 거부됨"; fail=1
+fi
+
 exit $fail

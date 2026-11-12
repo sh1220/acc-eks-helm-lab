@@ -5,7 +5,7 @@ EKS 클러스터 1개를 5팀(`container-1` ~ `container-5`)이 네임스페이�
 
 ```
 terraform/   VPC · EKS · 노드 그룹 · 애드온 · AWS Load Balancer Controller · gp3 StorageClass
-k8s/         팀 1개분 매니페스트(team.yaml), ALB 확인용 앱(smoke.yaml)
+k8s/         팀 1개분 매니페스트(team.yaml), 팀 공통 검사 정책(cluster-policy.yaml), ALB 확인용 앱(smoke.yaml)
 scripts/     팀 온보딩(kubeconfig 생성), 권한 검증
 ```
 
@@ -18,7 +18,7 @@ scripts/     팀 온보딩(kubeconfig 생성), 권한 검증
 | 네트워크 | VPC 10.0.0.0/16, 2AZ, NAT Gateway 1개 |
 | 외부 노출 | 공용 ALB 1개 (Ingress `group.name: sbg-demo`, path `/container-N`) |
 | 팀 권한 | ServiceAccount 토큰 kubeconfig, ns 안에서만 `edit` |
-| 팀 안전장치 | ResourceQuota, LimitRange, Pod Security `baseline` |
+| 팀 안전장치 | ResourceQuota, LimitRange, Pod Security `baseline`, ValidatingAdmissionPolicy(externalIPs 금지, Ingress path는 `/<자기 ns>`만) |
 
 팀 quota: requests 300m / 1Gi, limits 1 / 1280Mi, Pod 5, Service 5(LB·NodePort 0), PVC 2 / 5Gi.
 LimitRange 기본 limit(200m / 256Mi) × 5 = limits 합계라서, limit을 안 적은 Pod는 정확히 5개까지 뜬다.
@@ -99,4 +99,6 @@ EKS $0.10/h + t3.medium 2대 약 $0.10/h + NAT 약 $0.06/h + ALB 약 $0.02/h ≈
 - state는 로컬 파일이다. 운영진 여러 명이 apply 하게 되면 S3 backend로 옮긴다.
 - 팀 토큰은 만료가 없고 팀 공용이다. 실습 종료 시 네임스페이스 삭제로 회수한다.
 - 팀 간 네트워크는 열려 있다(NetworkPolicy 없음).
-- 공용 ALB annotation 3줄은 팀들이 똑같이 적어야 한다. 하나라도 다르면 ALB 그룹 전체 갱신이 멈춘다.
+- 공용 ALB annotation(`group.name`, `scheme`, `target-type`)은 팀들이 똑같이 적어야 한다. 하나라도 다르면 ALB 그룹 전체 갱신이 멈춘다.
+  path 가로채기는 정책으로 막지만, 팀이 `group.order`나 listener/action annotation을 넣는 것까지는 막지 않는다.
+  더 막으려면 정책에 annotation 허용 목록을 추가하거나 IngressClassParams로 그룹을 고정한다.
