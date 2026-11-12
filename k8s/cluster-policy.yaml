@@ -1,10 +1,10 @@
 # 팀 네임스페이스(acc.club/team=true) 공통 검사. 클러스터에 1번만 적용 (scripts/onboard-teams.sh 가 적용)
+
 # ① Service externalIPs 금지: edit 권한으로 다른 팀/외부 IP 트래픽을 가로챌 수 있음 (CVE-2020-8554)
-# ② Ingress path 는 /<자기 네임스페이스> 로만: 공용 ALB 에서 남의 경로나 / 를 가로채지 못하게
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingAdmissionPolicy
 metadata:
-  name: acc-team-guardrails
+  name: acc-team-service
 spec:
   failurePolicy: Fail
   matchConstraints:
@@ -15,26 +15,71 @@ spec:
         apiVersions: ["v1"]
         operations: ["CREATE", "UPDATE"]
         resources: ["services"]
-      - apiGroups: ["networking.k8s.io"]
-        apiVersions: ["v1"]
-        operations: ["CREATE", "UPDATE"]
-        resources: ["ingresses"]
   validations:
-    - expression: "object.kind != 'Service' || !has(object.spec.externalIPs) || size(object.spec.externalIPs) == 0"
+    - expression: "!has(object.spec.externalIPs) || size(object.spec.externalIPs) == 0"
       message: "Service externalIPs 는 사용할 수 없습니다"
-    - expression: "object.kind != 'Ingress' || !has(object.spec.defaultBackend)"
-      message: "Ingress defaultBackend 는 사용할 수 없습니다. rules 의 path 를 쓰세요"
-    - expression: >-
-        object.kind != 'Ingress' || !has(object.spec.rules) ||
-        object.spec.rules.all(r, !has(r.http) || r.http.paths.all(p,
-          has(p.path) && (p.path == '/' + namespaceObject.metadata.name ||
-                          p.path.startsWith('/' + namespaceObject.metadata.name + '/'))))
-      messageExpression: "'Ingress path 는 /' + namespaceObject.metadata.name + ' 로 시작해야 합니다'"
 ---
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingAdmissionPolicyBinding
 metadata:
-  name: acc-team-guardrails
+  name: acc-team-service
 spec:
-  policyName: acc-team-guardrails
+  policyName: acc-team-service
+  validationActions: [Deny]
+---
+# ② 공용 ALB 보호: 팀 Ingress 는 정해진 class·annotation·자기 path 만 쓸 수 있다
+#    (다른 팀 path 가로채기, actions/conditions 로 규칙 조작, group/scheme 충돌로 ALB 전체 정지를 막는다)
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: acc-team-ingress
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    namespaceSelector:
+      matchLabels: { acc.club/team: "true" }
+    resourceRules:
+      - apiGroups: ["networking.k8s.io"]
+        apiVersions: ["v1"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["ingresses"]
+  variables:
+    - name: ann
+      expression: "has(object.metadata.annotations) ? object.metadata.annotations : {}"
+    - name: prefix
+      expression: "'/' + namespaceObject.metadata.name"
+  validations:
+    - expression: "has(object.spec.ingressClassName) && object.spec.ingressClassName == 'alb' && !('kubernetes.io/ingress.class' in variables.ann)"
+      message: "ingressClassName: alb 를 쓰세요 (kubernetes.io/ingress.class annotation 금지)"
+    - expression: >-
+        variables.ann.all(k, !k.startsWith('alb.ingress.kubernetes.io/') || k in [
+          'alb.ingress.kubernetes.io/group.name',
+          'alb.ingress.kubernetes.io/scheme',
+          'alb.ingress.kubernetes.io/target-type',
+          'alb.ingress.kubernetes.io/healthcheck-path',
+          'alb.ingress.kubernetes.io/healthcheck-interval-seconds',
+          'alb.ingress.kubernetes.io/success-codes'])
+      message: "허용된 alb annotation 은 group.name, scheme, target-type, healthcheck-path, healthcheck-interval-seconds, success-codes 뿐입니다"
+    - expression: >-
+        variables.ann.exists(k, k == 'alb.ingress.kubernetes.io/group.name' && variables.ann[k] == 'sbg-demo') &&
+        variables.ann.exists(k, k == 'alb.ingress.kubernetes.io/scheme' && variables.ann[k] == 'internet-facing') &&
+        variables.ann.exists(k, k == 'alb.ingress.kubernetes.io/target-type' && variables.ann[k] == 'ip')
+      message: "annotation 은 group.name=sbg-demo, scheme=internet-facing, target-type=ip 여야 합니다"
+    - expression: "!has(object.spec.defaultBackend)"
+      message: "Ingress defaultBackend 는 사용할 수 없습니다. rules 의 path 를 쓰세요"
+    - expression: >-
+        has(object.spec.rules) && object.spec.rules.all(r, has(r.http) && r.http.paths.all(p,
+          has(p.path) && (p.path == variables.prefix || p.path.startsWith(variables.prefix + '/'))))
+      messageExpression: "'Ingress path 는 ' + variables.prefix + ' 로 시작해야 합니다'"
+    - expression: >-
+        object.spec.rules.all(r, r.http.paths.all(p,
+          has(p.backend.service) && !(has(p.backend.service.port.name) && p.backend.service.port.name == 'use-annotation')))
+      message: "backend 는 같은 네임스페이스의 Service 만 쓸 수 있습니다 (use-annotation, resource backend 금지)"
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: acc-team-ingress
+spec:
+  policyName: acc-team-ingress
   validationActions: [Deny]

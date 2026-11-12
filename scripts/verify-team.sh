@@ -39,24 +39,31 @@ reject() { # reject <설명> <매니페스트>: 서버가 거부해야 OK
   fi
 }
 
+ing() { # ing <path> [추가 annotation 줄]: 팀 Ingress 매니페스트
+  printf '%s\n' "apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: verify-ing
+  annotations:
+    alb.ingress.kubernetes.io/group.name: sbg-demo
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    ${2:-}
+spec:
+  ingressClassName: alb
+  rules: [{ http: { paths: [{ path: $1, pathType: Prefix, backend: { service: { name: x, port: { number: 80 } } } }] } }]"
+}
+
 reject "Service externalIPs" "apiVersion: v1
 kind: Service
 metadata: { name: verify-extip }
 spec: { ports: [{ port: 80 }], externalIPs: [1.2.3.4] }"
+reject "다른 팀 path(/$OTHER) Ingress"   "$(ing "/$OTHER")"
+reject "group.order annotation"          "$(ing "/$NS" "alb.ingress.kubernetes.io/group.order: '-1'")"
+reject "conditions annotation"           "$(ing "/$NS" "alb.ingress.kubernetes.io/conditions.x: '[]'")"
+reject "scheme 변경(internal)"           "$(ing "/$NS" | sed 's/internet-facing/internal/')"
 
-reject "다른 팀 path($OTHER) Ingress" "apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata: { name: verify-path }
-spec:
-  ingressClassName: alb
-  rules: [{ http: { paths: [{ path: /$OTHER, pathType: Prefix, backend: { service: { name: x, port: { number: 80 } } } }] } }]"
-
-if printf '%s\n' "apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata: { name: verify-path }
-spec:
-  ingressClassName: alb
-  rules: [{ http: { paths: [{ path: /$NS, pathType: Prefix, backend: { service: { name: x, port: { number: 80 } } } }] } }]" \
+if ing "/$NS" "alb.ingress.kubernetes.io/healthcheck-path: /$NS/health" \
    | kubectl apply --dry-run=server -f - >/dev/null 2>&1; then
   echo "OK   자기 path(/$NS) Ingress 허용"
 else
