@@ -99,5 +99,5 @@ EKS $0.10/h + t3.medium 2대 약 $0.10/h + NAT 약 $0.06/h + ALB 약 $0.02/h ≈
 - state는 로컬 파일이다. 운영진 여러 명이 apply 하게 되면 S3 backend로 옮긴다.
 - 팀 토큰은 만료가 없고 팀 공용이다. 실습 종료 시 네임스페이스 삭제로 회수한다.
 - 팀 간 네트워크는 열려 있다(NetworkPolicy 없음).
-- 팀 Ingress 의 alb annotation 은 허용 목록(group.name=sbg-demo, scheme=internet-facing, target-type=ip 고정 + healthcheck-path, healthcheck-interval-seconds, success-codes)만 통과한다.
+- 팀 Ingress 의 alb annotation 은 허용 목록(group.name=sbg-demo, scheme=internet-facing, target-type=ip 고정 + `/<ns>` 아래 healthcheck-path)만 통과하고, tls·host 는 쓸 수 없다.
   HTTPS·인증 같은 ALB 기능이 필요하면 `k8s/cluster-policy.yaml` 허용 목록에 추가한다.

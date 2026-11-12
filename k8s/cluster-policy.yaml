@@ -56,15 +56,20 @@ spec:
           'alb.ingress.kubernetes.io/group.name',
           'alb.ingress.kubernetes.io/scheme',
           'alb.ingress.kubernetes.io/target-type',
-          'alb.ingress.kubernetes.io/healthcheck-path',
-          'alb.ingress.kubernetes.io/healthcheck-interval-seconds',
-          'alb.ingress.kubernetes.io/success-codes'])
-      message: "허용된 alb annotation 은 group.name, scheme, target-type, healthcheck-path, healthcheck-interval-seconds, success-codes 뿐입니다"
+          'alb.ingress.kubernetes.io/healthcheck-path'])
+      message: "허용된 alb annotation 은 group.name, scheme, target-type, healthcheck-path 뿐입니다"
     - expression: >-
         variables.ann.exists(k, k == 'alb.ingress.kubernetes.io/group.name' && variables.ann[k] == 'sbg-demo') &&
         variables.ann.exists(k, k == 'alb.ingress.kubernetes.io/scheme' && variables.ann[k] == 'internet-facing') &&
         variables.ann.exists(k, k == 'alb.ingress.kubernetes.io/target-type' && variables.ann[k] == 'ip')
       message: "annotation 은 group.name=sbg-demo, scheme=internet-facing, target-type=ip 여야 합니다"
+    # 값이 잘못되면 컨트롤러가 그룹 전체 설정에 실패해 5팀 ALB 가 같이 멈추므로 값까지 검사
+    - expression: >-
+        !('alb.ingress.kubernetes.io/healthcheck-path' in variables.ann) ||
+        variables.ann['alb.ingress.kubernetes.io/healthcheck-path'].matches('^' + variables.prefix + '(/[A-Za-z0-9._~-]*)*$')
+      messageExpression: "'healthcheck-path 는 ' + variables.prefix + ' 아래 경로여야 합니다'"
+    - expression: "!has(object.spec.tls) && object.spec.rules.all(r, !has(r.host))"
+      message: "tls, host 는 쓸 수 없습니다 (공용 ALB 는 HTTP + path 로만 나눕니다)"
     - expression: "!has(object.spec.defaultBackend)"
       message: "Ingress defaultBackend 는 사용할 수 없습니다. rules 의 path 를 쓰세요"
     - expression: >-

@@ -61,6 +61,9 @@ spec: { ports: [{ port: 80 }], externalIPs: [1.2.3.4] }"
 reject "다른 팀 path(/$OTHER) Ingress"   "$(ing "/$OTHER")"
 reject "group.order annotation"          "$(ing "/$NS" "alb.ingress.kubernetes.io/group.order: '-1'")"
 reject "conditions annotation"           "$(ing "/$NS" "alb.ingress.kubernetes.io/conditions.x: '[]'")"
+reject "healthcheck-path 범위 밖"         "$(ing "/$NS" "alb.ingress.kubernetes.io/healthcheck-path: /$OTHER/health")"
+reject "success-codes annotation"        "$(ing "/$NS" "alb.ingress.kubernetes.io/success-codes: abc")"
+reject "host 지정"                       "$(ing "/$NS" | sed 's/- http:/- host: evil.example.com\n    http:/; s/rules: \[{ http/rules: [{ host: evil.example.com, http/')"
 reject "scheme 변경(internal)"           "$(ing "/$NS" | sed 's/internet-facing/internal/')"
 
 if ing "/$NS" "alb.ingress.kubernetes.io/healthcheck-path: /$NS/health" \
