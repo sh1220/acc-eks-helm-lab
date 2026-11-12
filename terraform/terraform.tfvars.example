@@ -1,0 +1,2 @@
+aws_profile = "acc"
+node_count  = 2

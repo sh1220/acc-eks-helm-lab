@@ -1,0 +1,39 @@
+# 공용 ALB 동작 확인용. 아무 경로에나 200 으로 응답한다. TEAM 치환 후 팀 kubeconfig 로 적용
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: smoke }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: smoke } }
+  template:
+    metadata: { labels: { app: smoke } }
+    spec:
+      containers:
+        - name: echo
+          image: hashicorp/http-echo:1.0
+          args: ["-text=hello from TEAM", "-listen=:5678"]
+          ports: [{ containerPort: 5678 }]
+---
+apiVersion: v1
+kind: Service
+metadata: { name: smoke }
+spec:
+  selector: { app: smoke }
+  ports: [{ port: 80, targetPort: 5678 }]
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: smoke
+  annotations:
+    alb.ingress.kubernetes.io/group.name: sbg-demo
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+spec:
+  ingressClassName: alb
+  rules:
+    - http:
+        paths:
+          - path: /TEAM
+            pathType: Prefix
+            backend: { service: { name: smoke, port: { number: 80 } } }

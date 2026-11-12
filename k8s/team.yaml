@@ -1,0 +1,74 @@
+# 팀 1개분. TEAM 을 container-N 으로 치환해서 적용한다 (scripts/onboard-teams.sh)
+# ① 팀 공간 + 위험한 Pod 차단
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: TEAM
+  labels:
+    acc.club/team: "true"
+    pod-security.kubernetes.io/enforce: baseline # privileged/hostNetwork/hostPath 거부
+    pod-security.kubernetes.io/warn: restricted  # 더 엄격한 기준은 경고만
+---
+# ② 팀 전체 자원 한도. 기본 limit(200m/256Mi) × pods 5 = limits 합계와 일치
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: team-quota
+  namespace: TEAM
+spec:
+  hard:
+    requests.cpu: 300m
+    limits.cpu: "1"
+    requests.memory: 1Gi
+    limits.memory: 1280Mi
+    pods: "5"
+    services: "5"
+    services.loadbalancers: "0"
+    services.nodeports: "0"
+    persistentvolumeclaims: "2"
+    requests.storage: 5Gi
+---
+# ③ 컨테이너 1개 기준 기본값/최대값
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: team-limits
+  namespace: TEAM
+spec:
+  limits:
+    - type: Container
+      defaultRequest: { cpu: 50m, memory: 128Mi }
+      default: { cpu: 200m, memory: 256Mi }
+      max: { cpu: 300m, memory: 512Mi }
+---
+# ④ 팀 공용 계정
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: team-deployer
+  namespace: TEAM
+---
+# ⑤ 그 계정의 장기 토큰 (만료 없음, 이 Secret 을 지우면 즉시 무효)
+apiVersion: v1
+kind: Secret
+metadata:
+  name: team-deployer-token
+  namespace: TEAM
+  annotations:
+    kubernetes.io/service-account.name: team-deployer
+type: kubernetes.io/service-account-token
+---
+# ⑥ 쿠버네티스 기본 edit 역할을 이 네임스페이스 안에서만
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: team-deployer-edit
+  namespace: TEAM
+subjects:
+  - kind: ServiceAccount
+    name: team-deployer
+    namespace: TEAM
+roleRef:
+  kind: ClusterRole
+  name: edit
+  apiGroup: rbac.authorization.k8s.io
