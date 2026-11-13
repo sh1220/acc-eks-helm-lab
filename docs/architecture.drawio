@@ -1,0 +1,183 @@
+<mxfile host="drawio-jsapi" modified="2026-11-13T10:12:36.259Z" agent="DrawioJSAPI/1.0.0" version="1.0.0">
+  <diagram id="diagram-1" name="ACC EKS Helm Lab">
+  <mxGraphModel dx="1426" dy="798" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="850">
+    <root>
+      <mxCell id="0" />
+      <mxCell id="1" parent="0" />
+      <mxCell id="g_aws" value="AWS Cloud · ap-northeast-2 (서울)" style="html=1;whiteSpace=wrap;fontSize=12;fontStyle=1;shape=mxgraph.aws4.group;verticalAlign=top;align=left;spacingLeft=30;fillColor=none;dashed=0;grIcon=mxgraph.aws4.group_aws_cloud_alt;strokeColor=#232F3E;fontColor=#232F3E" vertex="1" parent="1">
+        <mxGeometry x="200" y="180" width="1260" height="820" as="geometry" />
+      </mxCell>
+      <mxCell id="g_vpc" value="VPC 10.0.0.0/16 · 2 AZ" style="html=1;whiteSpace=wrap;fontSize=12;fontStyle=1;shape=mxgraph.aws4.group;verticalAlign=top;align=left;spacingLeft=30;fillColor=none;dashed=0;grIcon=mxgraph.aws4.group_vpc2;strokeColor=#8C4FFF;fontColor=#8C4FFF" vertex="1" parent="1">
+        <mxGeometry x="240" y="360" width="1120" height="610" as="geometry" />
+      </mxCell>
+      <mxCell id="g_pub" value="Public subnet" style="html=1;whiteSpace=wrap;fontSize=12;fontStyle=1;shape=mxgraph.aws4.group;verticalAlign=top;align=left;spacingLeft=30;fillColor=none;dashed=0;grIcon=mxgraph.aws4.group_security_group;grStroke=0;strokeColor=#7AA116;fontColor=#248814" vertex="1" parent="1">
+        <mxGeometry x="270" y="410" width="200" height="530" as="geometry" />
+      </mxCell>
+      <mxCell id="g_priv" value="Private subnet · 노드 t3.medium ×2" style="html=1;whiteSpace=wrap;fontSize=12;fontStyle=1;shape=mxgraph.aws4.group;verticalAlign=top;align=left;spacingLeft=30;fillColor=none;dashed=0;grIcon=mxgraph.aws4.group_security_group;grStroke=0;strokeColor=#00A4A6;fontColor=#147EBA" vertex="1" parent="1">
+        <mxGeometry x="510" y="410" width="820" height="530" as="geometry" />
+      </mxCell>
+      <mxCell id="g_ns1" value="ns container-1 · Quota · LimitRange · PSA · VAP" style="rounded=0;html=1;whiteSpace=wrap;fillColor=none;dashed=1;verticalAlign=top;align=left;spacingLeft=8;spacingTop=2;fontSize=11;fontStyle=1;strokeColor=#326CE5;fontColor=#326CE5" vertex="1" parent="1">
+        <mxGeometry x="800" y="460" width="500" height="220" as="geometry" />
+      </mxCell>
+      <mxCell id="g_ns2" value="ns container-2 ~ 5 (같은 구성)" style="rounded=0;html=1;whiteSpace=wrap;fillColor=none;dashed=1;verticalAlign=top;align=left;spacingLeft=8;spacingTop=2;fontSize=11;fontStyle=1;strokeColor=#326CE5;fontColor=#326CE5" vertex="1" parent="1">
+        <mxGeometry x="800" y="720" width="360" height="190" as="geometry" />
+      </mxCell>
+      <mxCell id="g_sys" value="클러스터 공용 (운영진 관리)" style="rounded=0;html=1;whiteSpace=wrap;fillColor=none;dashed=1;verticalAlign=top;align=left;spacingLeft=8;spacingTop=2;fontSize=11;fontStyle=1;strokeColor=#879196;fontColor=#5A6C72" vertex="1" parent="1">
+        <mxGeometry x="540" y="460" width="220" height="450" as="geometry" />
+      </mxCell>
+      <mxCell id="g_ext" value="External" style="rounded=0;html=1;whiteSpace=wrap;fillColor=none;dashed=1;verticalAlign=top;align=left;spacingLeft=8;spacingTop=2;fontSize=11;fontStyle=1;strokeColor=#879196;fontColor=#5A6C72" vertex="1" parent="1">
+        <mxGeometry x="1480" y="20" width="150" height="170" as="geometry" />
+      </mxCell>
+      <mxCell id="g_ci" value="CI/CD (GitHub)" style="rounded=0;html=1;whiteSpace=wrap;fillColor=none;dashed=1;verticalAlign=top;align=left;spacingLeft=8;spacingTop=2;fontSize=11;fontStyle=1;strokeColor=#879196;fontColor=#5A6C72" vertex="1" parent="1">
+        <mxGeometry x="200" y="1040" width="1260" height="150" as="geometry" />
+      </mxCell>
+      <mxCell id="ops" value="운영진" style="sketch=0;outlineConnect=0;fillColor=#232F3E;strokeColor=none;dashed=0;shape=mxgraph.aws4.users;aspect=fixed;html=1;fontSize=11;fontColor=#232F3E;whiteSpace=nowrap;labelBackgroundColor=#FFFFFF;verticalLabelPosition=bottom;verticalAlign=top;align=center" vertex="1" parent="1">
+        <mxGeometry x="60" y="100" width="56" height="56" as="geometry" />
+      </mxCell>
+      <mxCell id="stu" value="동아리원 (팀 1~5)&lt;br&gt;kubectl · helm · docker" style="sketch=0;outlineConnect=0;fillColor=#232F3E;strokeColor=none;dashed=0;shape=mxgraph.aws4.users;aspect=fixed;html=1;fontSize=11;fontColor=#232F3E;whiteSpace=nowrap;labelBackgroundColor=#FFFFFF;verticalLabelPosition=top;verticalAlign=bottom;align=center" vertex="1" parent="1">
+        <mxGeometry x="1150" y="40" width="56" height="56" as="geometry" />
+      </mxCell>
+      <mxCell id="web" value="앱 사용자&lt;br&gt;(브라우저)" style="sketch=0;outlineConnect=0;fillColor=#232F3E;strokeColor=none;dashed=0;shape=mxgraph.aws4.users;aspect=fixed;html=1;fontSize=11;fontColor=#232F3E;whiteSpace=nowrap;labelBackgroundColor=#FFFFFF;verticalLabelPosition=bottom;verticalAlign=top;align=center" vertex="1" parent="1">
+        <mxGeometry x="60" y="536" width="56" height="56" as="geometry" />
+      </mxCell>
+      <mxCell id="ghcr" value="GHCR (ghcr.io)&lt;br&gt;팀 공개 이미지" style="shape=image;imageAspect=1;aspect=fixed;strokeColor=none;fillColor=none;image=https://cdn.simpleicons.org/docker/2496ED;html=1;fontSize=11;fontColor=#232F3E;whiteSpace=nowrap;labelBackgroundColor=#FFFFFF;verticalLabelPosition=bottom;verticalAlign=top;align=center" vertex="1" parent="1">
+        <mxGeometry x="1527" y="40" width="56" height="56" as="geometry" />
+      </mxCell>
+      <mxCell id="eks" value="EKS API · sbg-eks (1.36)&lt;br&gt;Access Entry: 운영진·gha-apply = 관리자&lt;br&gt;gha-plan = 조회" style="sketch=0;outlineConnect=0;gradientColor=none;fillColor=#ED7100;strokeColor=#ffffff;dashed=0;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.eks;html=1;fontSize=11;fontColor=#232F3E;whiteSpace=nowrap;labelBackgroundColor=#FFFFFF;labelPosition=left;verticalLabelPosition=middle;align=right;verticalAlign=middle;spacingRight=6" vertex="1" parent="1">
+        <mxGeometry x="1052" y="220" width="56" height="56" as="geometry" />
+      </mxCell>
+      <mxCell id="iam" value="IAM OIDC&lt;br&gt;gha-plan · gha-apply" style="sketch=0;outlineConnect=0;gradientColor=none;fillColor=#DD344C;strokeColor=#ffffff;dashed=0;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.identity_and_access_management;html=1;fontSize=11;fontColor=#232F3E;whiteSpace=nowrap;labelBackgroundColor=#FFFFFF;verticalLabelPosition=top;verticalAlign=bottom;align=center" vertex="1" parent="1">
+        <mxGeometry x="1210" y="220" width="56" height="56" as="geometry" />
+      </mxCell>
+      <mxCell id="s3" value="S3&lt;br&gt;Terraform state" style="sketch=0;outlineConnect=0;gradientColor=none;fillColor=#7AA116;strokeColor=#ffffff;dashed=0;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.s3;html=1;fontSize=11;fontColor=#232F3E;whiteSpace=nowrap;labelBackgroundColor=#FFFFFF;verticalLabelPosition=bottom;verticalAlign=top;align=center" vertex="1" parent="1">
+        <mxGeometry x="1330" y="220" width="56" height="56" as="geometry" />
+      </mxCell>
+      <mxCell id="alb" value="공용 ALB&lt;br&gt;group: sbg-demo" style="sketch=0;outlineConnect=0;fillColor=#8C4FFF;strokeColor=none;dashed=0;aspect=fixed;shape=mxgraph.aws4.application_load_balancer;html=1;fontSize=11;fontColor=#232F3E;whiteSpace=nowrap;labelBackgroundColor=#FFFFFF;verticalLabelPosition=top;verticalAlign=bottom;align=center" vertex="1" parent="1">
+        <mxGeometry x="342" y="536" width="56" height="56" as="geometry" />
+      </mxCell>
+      <mxCell id="nat" value="NAT Gateway&lt;br&gt;(노드 → GHCR pull)" style="sketch=0;outlineConnect=0;fillColor=#8C4FFF;strokeColor=none;dashed=0;aspect=fixed;shape=mxgraph.aws4.nat_gateway;html=1;fontSize=11;fontColor=#232F3E;whiteSpace=nowrap;labelBackgroundColor=#FFFFFF;verticalLabelPosition=bottom;verticalAlign=top;align=center" vertex="1" parent="1">
+        <mxGeometry x="342" y="800" width="56" height="56" as="geometry" />
+      </mxCell>
+      <mxCell id="lbc" value="AWS Load Balancer&lt;br&gt;Controller" style="aspect=fixed;sketch=0;dashed=0;fillColor=#326CE5;strokeColor=#ffffff;shape=mxgraph.kubernetes.icon2;prIcon=deploy;html=1;fontSize=11;fontColor=#232F3E;whiteSpace=nowrap;labelBackgroundColor=#FFFFFF;verticalLabelPosition=bottom;verticalAlign=top;align=center" vertex="1" parent="1">
+        <mxGeometry x="626" y="700" width="48" height="48" as="geometry" />
+      </mxCell>
+      <mxCell id="vap" value="ValidatingAdmission&lt;br&gt;Policy (acc-team-*)" style="aspect=fixed;sketch=0;dashed=0;fillColor=#326CE5;strokeColor=#ffffff;shape=mxgraph.kubernetes.icon2;prIcon=psp;html=1;fontSize=11;fontColor=#232F3E;whiteSpace=nowrap;labelBackgroundColor=#FFFFFF;verticalLabelPosition=bottom;verticalAlign=top;align=center" vertex="1" parent="1">
+        <mxGeometry x="626" y="820" width="48" height="48" as="geometry" />
+      </mxCell>
+      <mxCell id="ing" value="Ingress&lt;br&gt;/container-1" style="aspect=fixed;sketch=0;dashed=0;fillColor=#326CE5;strokeColor=#ffffff;shape=mxgraph.kubernetes.icon2;prIcon=ing;html=1;fontSize=11;fontColor=#232F3E;whiteSpace=nowrap;labelBackgroundColor=#FFFFFF;verticalLabelPosition=bottom;verticalAlign=top;align=center" vertex="1" parent="1">
+        <mxGeometry x="840" y="540" width="48" height="48" as="geometry" />
+      </mxCell>
+      <mxCell id="svc" value="Service&lt;br&gt;ClusterIP" style="aspect=fixed;sketch=0;dashed=0;fillColor=#326CE5;strokeColor=#ffffff;shape=mxgraph.kubernetes.icon2;prIcon=svc;html=1;fontSize=11;fontColor=#232F3E;whiteSpace=nowrap;labelBackgroundColor=#FFFFFF;verticalLabelPosition=bottom;verticalAlign=top;align=center" vertex="1" parent="1">
+        <mxGeometry x="970" y="540" width="48" height="48" as="geometry" />
+      </mxCell>
+      <mxCell id="pod" value="Deployment&lt;br&gt;/ Pod" style="aspect=fixed;sketch=0;dashed=0;fillColor=#326CE5;strokeColor=#ffffff;shape=mxgraph.kubernetes.icon2;prIcon=pod;html=1;fontSize=11;fontColor=#232F3E;whiteSpace=nowrap;labelBackgroundColor=#FFFFFF;verticalLabelPosition=bottom;verticalAlign=top;align=center" vertex="1" parent="1">
+        <mxGeometry x="1100" y="540" width="48" height="48" as="geometry" />
+      </mxCell>
+      <mxCell id="pvc" value="PVC" style="aspect=fixed;sketch=0;dashed=0;fillColor=#326CE5;strokeColor=#ffffff;shape=mxgraph.kubernetes.icon2;prIcon=pvc;html=1;fontSize=11;fontColor=#232F3E;whiteSpace=nowrap;labelBackgroundColor=#FFFFFF;verticalLabelPosition=top;verticalAlign=bottom;align=center" vertex="1" parent="1">
+        <mxGeometry x="1230" y="540" width="48" height="48" as="geometry" />
+      </mxCell>
+      <mxCell id="ns25" value="팀 2~5 앱" style="aspect=fixed;sketch=0;dashed=0;fillColor=#326CE5;strokeColor=#ffffff;shape=mxgraph.kubernetes.icon2;prIcon=ns;html=1;fontSize=11;fontColor=#232F3E;whiteSpace=nowrap;labelBackgroundColor=#FFFFFF;verticalLabelPosition=bottom;verticalAlign=top;align=center" vertex="1" parent="1">
+        <mxGeometry x="956" y="780" width="48" height="48" as="geometry" />
+      </mxCell>
+      <mxCell id="ebs" value="EBS gp3&lt;br&gt;(EBS CSI 드라이버가 생성)" style="sketch=0;outlineConnect=0;gradientColor=none;fillColor=#7AA116;strokeColor=#ffffff;dashed=0;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.elastic_block_store;html=1;fontSize=11;fontColor=#232F3E;whiteSpace=nowrap;labelBackgroundColor=#FFFFFF;verticalLabelPosition=bottom;verticalAlign=top;align=center" vertex="1" parent="1">
+        <mxGeometry x="1226" y="800" width="56" height="56" as="geometry" />
+      </mxCell>
+      <mxCell id="repo" value="acc-eks-helm-lab&lt;br&gt;(public 레포)" style="shape=image;imageAspect=1;aspect=fixed;strokeColor=none;fillColor=none;image=https://cdn.simpleicons.org/github/181717;html=1;fontSize=11;fontColor=#232F3E;whiteSpace=nowrap;labelBackgroundColor=#FFFFFF;verticalLabelPosition=bottom;verticalAlign=top;align=center" vertex="1" parent="1">
+        <mxGeometry x="400" y="1080" width="56" height="56" as="geometry" />
+      </mxCell>
+      <mxCell id="gha" value="GitHub Actions&lt;br&gt;ci.yml · apply.yml" style="shape=image;imageAspect=1;aspect=fixed;strokeColor=none;fillColor=none;image=https://cdn.simpleicons.org/githubactions/2088FF;html=1;fontSize=11;fontColor=#232F3E;whiteSpace=nowrap;labelBackgroundColor=#FFFFFF;verticalLabelPosition=bottom;verticalAlign=top;align=center" vertex="1" parent="1">
+        <mxGeometry x="720" y="1080" width="56" height="56" as="geometry" />
+      </mxCell>
+      <mxCell id="t1" value="kubectl · helm (팀 kubeconfig)" style="text=1;strokeColor=none;fillColor=none;html=1;fontSize=11;fontColor=#232F3E;align=left;verticalAlign=middle;labelBackgroundColor=#FFFFFF;whiteSpace=nowrap" vertex="1" parent="1">
+        <mxGeometry x="1186" y="112" width="190" height="20" as="geometry" />
+      </mxCell>
+      <mxCell id="t6" value="배포 (ns 범위 edit)" style="text=1;strokeColor=none;fillColor=none;html=1;fontSize=11;fontColor=#232F3E;align=left;verticalAlign=middle;labelBackgroundColor=#FFFFFF;whiteSpace=nowrap" vertex="1" parent="1">
+        <mxGeometry x="1088" y="300" width="120" height="20" as="geometry" />
+      </mxCell>
+      <mxCell id="t16" value="OIDC AssumeRole" style="text=1;strokeColor=none;fillColor=none;html=1;fontSize=11;fontColor=#232F3E;align=left;verticalAlign=middle;labelBackgroundColor=#FFFFFF;whiteSpace=nowrap" vertex="1" parent="1">
+        <mxGeometry x="1010" y="1076" width="120" height="20" as="geometry" />
+      </mxCell>
+      <mxCell id="t10" value="gp3 동적 생성" style="text=1;strokeColor=none;fillColor=none;html=1;fontSize=11;fontColor=#232F3E;align=left;verticalAlign=middle;labelBackgroundColor=#FFFFFF;whiteSpace=nowrap" vertex="1" parent="1">
+        <mxGeometry x="1262" y="730" width="100" height="20" as="geometry" />
+      </mxCell>
+      <mxCell id="t15" value="state (S3 lockfile)" style="text=1;strokeColor=none;fillColor=none;html=1;fontSize=11;fontColor=#232F3E;align=left;verticalAlign=middle;labelBackgroundColor=#FFFFFF;whiteSpace=nowrap" vertex="1" parent="1">
+        <mxGeometry x="1010" y="1122" width="120" height="20" as="geometry" />
+      </mxCell>
+      <mxCell id="e1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#545B64;fontSize=11;fontColor=#232F3E;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;entryX=0.75;entryY=0" edge="1" parent="1" source="stu" target="eks">
+        <mxGeometry relative="1" as="geometry">
+          <Array as="points">
+            <mxPoint x="1178" y="160" />
+            <mxPoint x="1094" y="160" />
+          </Array>
+        </mxGeometry>
+      </mxCell>
+      <mxCell id="e2" value="docker push (amd64)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#545B64;fontSize=11;fontColor=#232F3E;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.5;entryX=0;entryY=0.5" edge="1" parent="1" source="stu" target="ghcr">
+        <mxGeometry relative="1" as="geometry" />
+      </mxCell>
+      <mxCell id="e3" value="kubectl (관리자) · onboard-teams.sh" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#545B64;fontSize=11;fontColor=#232F3E;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.5;entryX=0.25;entryY=0" edge="1" parent="1" source="ops" target="eks">
+        <mxGeometry relative="1" as="geometry">
+          <Array as="points">
+            <mxPoint x="1066" y="128" />
+          </Array>
+        </mxGeometry>
+      </mxCell>
+      <mxCell id="e4" value="HTTP /container-N" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#545B64;fontSize=11;fontColor=#232F3E;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.5;entryX=0;entryY=0.5" edge="1" parent="1" source="web" target="alb">
+        <mxGeometry relative="1" as="geometry" />
+      </mxCell>
+      <mxCell id="e5" value="팀별 path" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#545B64;fontSize=11;fontColor=#232F3E;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.5;entryX=0;entryY=0.5" edge="1" parent="1" source="alb" target="ing">
+        <mxGeometry relative="1" as="geometry" />
+      </mxCell>
+      <mxCell id="e6" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#545B64;fontSize=11;fontColor=#232F3E;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;entryX=0.56;entryY=0" edge="1" parent="1" source="eks" target="g_ns1">
+        <mxGeometry relative="1" as="geometry" />
+      </mxCell>
+      <mxCell id="e7" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#545B64;fontSize=11;fontColor=#232F3E;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.5;entryX=0;entryY=0.5" edge="1" parent="1" source="ing" target="svc">
+        <mxGeometry relative="1" as="geometry" />
+      </mxCell>
+      <mxCell id="e8" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#545B64;fontSize=11;fontColor=#232F3E;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.5;entryX=0;entryY=0.5" edge="1" parent="1" source="svc" target="pod">
+        <mxGeometry relative="1" as="geometry" />
+      </mxCell>
+      <mxCell id="e9" value="mount" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#545B64;fontSize=11;fontColor=#232F3E;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.5;entryX=0;entryY=0.5" edge="1" parent="1" source="pod" target="pvc">
+        <mxGeometry relative="1" as="geometry" />
+      </mxCell>
+      <mxCell id="e10" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#545B64;fontSize=11;fontColor=#232F3E;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;entryX=0.5;entryY=0" edge="1" parent="1" source="pvc" target="ebs">
+        <mxGeometry relative="1" as="geometry" />
+      </mxCell>
+      <mxCell id="e11" value="Ingress 감시 → ALB 규칙" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#545B64;fontSize=11;fontColor=#232F3E;labelBackgroundColor=#FFFFFF;dashed=1;exitX=0;exitY=0.5;entryX=0.5;entryY=1" edge="1" parent="1" source="lbc" target="alb">
+        <mxGeometry relative="1" as="geometry">
+          <Array as="points">
+            <mxPoint x="370" y="724" />
+          </Array>
+        </mxGeometry>
+      </mxCell>
+      <mxCell id="e13" value="PR · 머지" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#545B64;fontSize=11;fontColor=#232F3E;labelBackgroundColor=#FFFFFF;exitX=0;exitY=0.5;entryX=0;entryY=0.5" edge="1" parent="1" source="ops" target="repo">
+        <mxGeometry relative="1" as="geometry">
+          <Array as="points">
+            <mxPoint x="30" y="128" />
+            <mxPoint x="30" y="1108" />
+          </Array>
+        </mxGeometry>
+      </mxCell>
+      <mxCell id="e14" value="PR: plan / main: apply" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#545B64;fontSize=11;fontColor=#232F3E;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.5;entryX=0;entryY=0.5" edge="1" parent="1" source="repo" target="gha">
+        <mxGeometry relative="1" as="geometry" />
+      </mxCell>
+      <mxCell id="e16" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#545B64;fontSize=11;fontColor=#232F3E;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.3;entryX=0.5;entryY=1" edge="1" parent="1" source="gha" target="iam">
+        <mxGeometry relative="1" as="geometry">
+          <Array as="points">
+            <mxPoint x="1400" y="1097" />
+            <mxPoint x="1400" y="330" />
+            <mxPoint x="1238" y="330" />
+          </Array>
+        </mxGeometry>
+      </mxCell>
+      <mxCell id="e15" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#545B64;fontSize=11;fontColor=#232F3E;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.7;entryX=1;entryY=0.5" edge="1" parent="1" source="gha" target="s3">
+        <mxGeometry relative="1" as="geometry">
+          <Array as="points">
+            <mxPoint x="1420" y="1119" />
+            <mxPoint x="1420" y="248" />
+          </Array>
+        </mxGeometry>
+      </mxCell>
+    </root>
+  </mxGraphModel>
+  </diagram>
+</mxfile>
