@@ -4,7 +4,7 @@ output "cluster_name" {
 
 output "configure_kubectl" {
   description = "운영진 PC 에 관리자 kubeconfig 등록"
-  value       = "aws eks update-kubeconfig --region ${var.region} --name ${module.eks.cluster_name} --profile ${var.aws_profile}"
+  value       = "aws eks update-kubeconfig --region ${var.region} --name ${module.eks.cluster_name} --profile acc"
 }
 
 output "public_subnet_cidrs" {

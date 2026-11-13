@@ -1,0 +1,139 @@
+# PR 검사. homelab-infra / 칠삼이 Infra 레포 방식을 따른다.
+#   validate(fmt·validate·tflint·k8s 매니페스트) · security(Trivy) → plan(PR 코멘트 upsert)
+# AWS 접속은 GitHub OIDC → acc-eks-gha-plan 역할(읽기 전용, PR 에서만 assume 가능). 키를 저장하지 않는다.
+name: ci
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# 같은 PR 에 새 커밋이 오면 이전 실행 취소. plan 은 -lock=false 읽기 전용 (apply 를 막지 않게)
+concurrency:
+  group: ci-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  TF_VERSION: "1.11.4"
+  AWS_REGION: ap-northeast-2
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+      - run: terraform fmt -check -recursive
+      - name: terraform validate
+        run: |
+          for d in terraform bootstrap; do
+            echo "== $d"
+            terraform -chdir=$d init -backend=false -input=false >/dev/null
+            terraform -chdir=$d validate -no-color
+          done
+      - uses: terraform-linters/setup-tflint@v4
+      - run: tflint --recursive
+      - name: shellcheck
+        run: shellcheck scripts/*.sh
+      - name: k8s 매니페스트 문법
+        run: |
+          for f in k8s/*.yaml; do
+            sed s/TEAM/container-1/g "$f" | yq e '.' - >/dev/null && echo "ok $f"
+          done
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # private 레포라 Code Scanning(SARIF)은 못 쓴다 → JSON 은 PR 코멘트용, table 은 CRITICAL 게이트
+      - uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: config
+          scan-ref: .
+          format: json
+          output: trivy.json
+          exit-code: "0"
+          trivyignores: .trivyignore
+      - uses: actions/upload-artifact@v4
+        with:
+          name: trivy
+          path: trivy.json
+      - uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: config
+          scan-ref: .
+          format: table
+          severity: CRITICAL
+          exit-code: "1"
+          trivyignores: .trivyignore
+
+  plan:
+    needs: [validate, security]
+    # 포크 PR 은 OIDC 토큰을 못 받는다. Trivy 실패와 무관하게 plan 은 보여준다(차단은 apply.yml 의 Trivy 게이트)
+    if: ${{ !cancelled() && needs.validate.result == 'success' && github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write # OIDC
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: trivy
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_PLAN_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: plan
+        id: plan
+        run: |
+          set +e
+          terraform -chdir=terraform init -input=false >/dev/null &&
+            terraform -chdir=terraform plan -no-color -input=false -lock=false -detailed-exitcode > plan.txt 2>&1
+          echo "exitcode=$?" >> "$GITHUB_OUTPUT"
+          cat plan.txt
+      - name: comment
+        uses: actions/github-script@v7
+        env:
+          EXITCODE: ${{ steps.plan.outputs.exitcode }}
+        with:
+          script: |
+            const fs = require('fs');
+            const code = process.env.EXITCODE;
+            const marker = '<!-- ci-report -->';
+            let plan = fs.existsSync('plan.txt') ? fs.readFileSync('plan.txt', 'utf8') : '(plan 출력 없음)';
+            if (plan.length > 50000) plan = '...(앞부분 생략)\n' + plan.slice(-50000);
+            const ok = code === '0' || code === '2';
+            const line = code === '0' ? '변경 없음' : code === '2'
+              ? (plan.match(/^Plan: .*$/m) || ['변경 있음'])[0] : '실패';
+            let trivy = '결과 없음';
+            if (fs.existsSync('trivy.json')) {
+              const c = { CRITICAL: 0, HIGH: 0, MEDIUM: 0 };
+              for (const r of JSON.parse(fs.readFileSync('trivy.json', 'utf8')).Results || [])
+                for (const m of r.Misconfigurations || []) if (m.Severity in c) c[m.Severity]++;
+              trivy = `**CRITICAL ${c.CRITICAL} · HIGH ${c.HIGH} · MEDIUM ${c.MEDIUM}** — CRITICAL만 차단 · 예외 \`.trivyignore\``;
+            }
+            const sha = context.payload.pull_request.head.sha.slice(0, 7);
+            const body = [marker,
+              `## CI 리포트 — \`${sha}\` · @${context.actor}`, '',
+              `### Terraform Plan ${ok ? '✅' : '❌'}`, line, '',
+              '<details><summary>Show Plan</summary>', '', '```terraform', plan, '```', '</details>', '',
+              '---', '### Trivy IaC Scan', trivy].join('\n');
+            const { owner, repo } = context.repo, issue_number = context.issue.number;
+            const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number });
+            const prev = comments.find(c => c.body.startsWith(marker));
+            if (prev) await github.rest.issues.updateComment({ owner, repo, comment_id: prev.id, body });
+            else await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            await core.summary.addRaw(body).write();
+      - if: steps.plan.outputs.exitcode != '0' && steps.plan.outputs.exitcode != '2'
+        run: exit 1
