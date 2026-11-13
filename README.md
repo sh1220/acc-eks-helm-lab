@@ -52,6 +52,8 @@ homelab-infra 와 같은 방식이다. **인프라 변경은 PR 로 하고, main
 | 레포 변수 | `AWS_PLAN_ROLE_ARN`, `AWS_APPLY_ROLE_ARN` |
 | Trivy 예외 | `.trivyignore` (EKS public 엔드포인트 등 설계상 필요한 것만, 사유 포함) |
 
+**CI 가 적용하는 것은 `terraform/` 뿐이다.** `k8s/`(팀 매니페스트, 정책, ops-landing)를 바꾸면 머지 후 운영진이 `kubectl apply -f` 로 직접 반영한다.
+
 로컬 `terraform plan` 은 언제든 돌려도 된다(`-lock=false` 권장). **로컬 apply 는 CI 가 고장 났을 때만** 한다.
 
 ### bootstrap (이미 완료, 다시 할 일 없음)
@@ -85,7 +87,6 @@ kubectl get storageclass                       # gp3 (default)
 ## 2. 팀 온보딩
 
 ```bash
-cd ..
 ./scripts/onboard-teams.sh          # out/container-1..5.kubeconfig 생성
 for i in 1 2 3 4 5; do ./scripts/verify-team.sh $i; done   # 전부 OK 여야 함
 ```
@@ -111,8 +112,17 @@ unset KUBECONFIG
 |---|---|
 | 팀 사용량 | `kubectl get resourcequota -A` |
 | ALB 문제 | `kubectl -n kube-system logs deploy/aws-load-balancer-controller --tail=50` |
-| 토큰 재발급 (3팀) | `kubectl -n container-3 delete secret team-deployer-token && ./scripts/onboard-teams.sh 3` |
-| 실습 없는 기간 노드 0대 | `variables.tf` 의 `node_count` 기본값을 0 으로 바꾸는 PR (컨트롤 플레인·NAT 요금은 계속) |
+| 노드 수 조절 (예: 0대 / 3대) | `aws eks update-nodegroup-config --cluster-name sbg-eks --nodegroup-name $(aws eks list-nodegroups --cluster-name sbg-eks --query 'nodegroups[0]' --output text) --scaling-config minSize=0,maxSize=4,desiredSize=0` (0대면 컨트롤 플레인·NAT 요금은 계속). `node_count` 를 바꾸는 PR 로는 바뀌지 않는다 |
+
+### 팀 토큰 회수·재발급 (예: 3팀)
+
+팀 권한(`edit`)으로는 토큰을 새로 만들 수도 있어서(`serviceaccounts/token`, Secret 생성), 토큰 Secret 만 지우면 이미 새로 만든 토큰이 살아남는다. **ServiceAccount 자체를 지워야** 그 계정의 모든 토큰이 무효가 된다.
+
+```bash
+kubectl -n container-3 delete serviceaccount team-deployer          # 이 계정으로 발급된 토큰 전부 무효
+kubectl -n container-3 delete secret --field-selector type=kubernetes.io/service-account-token
+./scripts/onboard-teams.sh 3                                       # 계정·토큰 다시 생성 → out/container-3.kubeconfig 를 팀장에게 다시 DM
+```
 
 ## 4. 종료 (11/30)
 

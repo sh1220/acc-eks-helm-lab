@@ -19,7 +19,8 @@ variable "node_instance_type" {
 }
 
 variable "node_count" {
-  description = "노드 수. 실습 없는 기간에는 0으로 내려 노드 요금을 아낀다"
+  # EKS 모듈이 desired_size 변경을 무시한다(ignore_changes). 생성 이후 노드 수 조절은 README 의 aws eks update-nodegroup-config 로 한다
+  description = "노드 그룹을 처음 만들 때의 노드 수"
   type        = number
   default     = 2
 }

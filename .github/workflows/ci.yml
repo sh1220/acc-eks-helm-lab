@@ -49,7 +49,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      # private 레포라 Code Scanning(SARIF)은 못 쓴다 → JSON 은 PR 코멘트용, table 은 CRITICAL 게이트
+      # JSON 은 PR 코멘트용, table 은 CRITICAL 게이트
       - uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: config
