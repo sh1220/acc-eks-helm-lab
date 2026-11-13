@@ -3,6 +3,10 @@
 EKS 클러스터 1개를 5팀(`container-1` ~ `container-5`)이 네임스페이스로 나눠 쓰는 Helm 실습 환경.
 개념 설명, 동아리원 사용법, 에러 대처는 Notion 가이드에 있다: **공유 EKS Helm 실습 환경 A to Z**
 
+![아키텍처](docs/architecture.png)
+
+원본: `docs/architecture.drawio` (draw.io)
+
 ```
 bootstrap/   CI/CD 전제 조건: state S3 버킷, GitHub OIDC, plan/apply 역할 (운영진 PC 에서 1회)
 terraform/   VPC · EKS · 노드 그룹 · 애드온 · AWS Load Balancer Controller · gp3 StorageClass

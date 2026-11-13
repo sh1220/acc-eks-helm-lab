@@ -75,6 +75,10 @@ module "eks" {
   enable_cluster_creator_admin_permissions = false
   access_entries                           = local.access_entries
 
+  # Secret 암호화 KMS 키 관리자. 비워 두면 "terraform 을 실행한 주체"가 들어가서
+  # CI(plan/apply 역할)·운영진 PC 중 누가 돌리느냐에 따라 매번 diff 가 생긴다 → 고정
+  kms_key_administrators = concat(var.cluster_admin_arns, [data.aws_iam_role.gha["apply"].arn])
+
   vpc_id     = module.vpc.vpc_id
   subnet_ids = module.vpc.private_subnets
 
