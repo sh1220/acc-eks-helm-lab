@@ -16,7 +16,9 @@ provider "aws" {
 }
 
 locals {
-  repo = "sh1220/acc-eks-helm-lab"
+  # GitHub OIDC 토큰의 sub 접두사. 이 레포는 immutable subject(소유자·레포 ID 포함)를 쓴다.
+  # 확인: gh api repos/sh1220/acc-eks-helm-lab/actions/oidc/customization/sub
+  repo = "sh1220@61071228/acc-eks-helm-lab@1454948656"
 }
 
 data "aws_caller_identity" "this" {}

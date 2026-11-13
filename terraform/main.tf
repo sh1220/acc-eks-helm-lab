@@ -13,7 +13,11 @@ data "aws_iam_role" "gha" {
 
 locals {
   admin_policy = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
-  view_policy  = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSAdminViewPolicy" # Secret 포함 조회 (helm release 읽기)
+  # plan 이 helm_release(release 정보가 kube-system Secret 에 있음)와 StorageClass(클러스터 범위)를 읽어야 해서
+  # Secret 까지 보이는 AdminView 를 쓴다. plan 역할은 이 레포의 PR 에서만 assume 되고, PR 을 만들 수 있는 사람은
+  # main 에 push 해 apply(관리자) 역할도 쓸 수 있으므로 권한이 늘어나지는 않는다.
+  # main 브랜치 보호(리뷰 필수)를 켜면 이 전제가 깨지므로 그때 plan 역할 범위를 다시 줄인다.
+  view_policy = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSAdminViewPolicy"
 
   access_entries = merge(
     { for arn in concat(var.cluster_admin_arns, [data.aws_iam_role.gha["apply"].arn]) : arn => {
