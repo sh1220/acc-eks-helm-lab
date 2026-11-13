@@ -48,7 +48,7 @@ metadata:
   name: team-deployer
   namespace: TEAM
 ---
-# ⑤ 그 계정의 장기 토큰 (만료 없음, 이 Secret 을 지우면 즉시 무효)
+# ⑤ 그 계정의 장기 토큰 (만료 없음). 회수는 Secret 이 아니라 ServiceAccount 를 지웠다 다시 만든다 (README 운영 중 참고)
 apiVersion: v1
 kind: Secret
 metadata:
