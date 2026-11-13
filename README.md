@@ -4,7 +4,9 @@ EKS 클러스터 1개를 5팀(`container-1` ~ `container-5`)이 네임스페이�
 개념 설명, 동아리원 사용법, 에러 대처는 Notion 가이드에 있다: **공유 EKS Helm 실습 환경 A to Z**
 
 ```
+bootstrap/   CI/CD 전제 조건: state S3 버킷, GitHub OIDC, plan/apply 역할 (운영진 PC 에서 1회)
 terraform/   VPC · EKS · 노드 그룹 · 애드온 · AWS Load Balancer Controller · gp3 StorageClass
+.github/     ci.yml(PR: 검사 + plan 코멘트), apply.yml(main 머지: apply)
 k8s/         팀 1개분 매니페스트(team.yaml), 팀 공통 검사 정책(cluster-policy.yaml), ALB 확인용 앱(smoke.yaml)
 scripts/     팀 온보딩(kubeconfig 생성), 권한 검증
 ```
@@ -26,18 +28,46 @@ LimitRange 기본 limit(200m / 256Mi) × 5 = limits 합계라서, limit을 안 �
 ## 0. 준비
 
 - 도구: `terraform` ≥ 1.11, `aws` CLI v2, `kubectl`, `helm`
-- 동아리 AWS 계정 프로필: `aws configure --profile acc` (다른 이름이면 `terraform.tfvars`의 `aws_profile`)
+- 동아리 AWS 계정 프로필: `aws configure --profile acc` 후 로컬 명령은 `export AWS_PROFILE=acc` 상태에서 실행
 
-## 1. 클러스터 생성 (약 20분, 이때부터 과금)
+## 1. CI/CD 흐름
+
+homelab-infra 와 같은 방식이다. **인프라 변경은 PR 로 하고, main 머지가 곧 apply 다.**
+
+```
+브랜치 → PR ─▶ ci.yml: fmt·validate·tflint·shellcheck · Trivy · terraform plan → PR 에 "CI 리포트" 코멘트
+             └ 리뷰 후 squash 머지 ─▶ apply.yml: Trivy CRITICAL 게이트 → terraform apply (결과는 Actions Summary)
+```
+
+| 항목 | 값 |
+|---|---|
+| state | S3 `acc-eks-helm-lab-tfstate-384325768399` / `eks/terraform.tfstate`, `use_lockfile` 잠금, 버전 관리 |
+| AWS 인증 | GitHub OIDC. 키를 저장하지 않는다 |
+| plan 역할 | `acc-eks-gha-plan`: ReadOnlyAccess, **PR 에서만** assume. EKS 조회 권한(AdminView) |
+| apply 역할 | `acc-eks-gha-apply`: AdministratorAccess, **main 브랜치에서만** assume. EKS 관리자 |
+| 레포 변수 | `AWS_PLAN_ROLE_ARN`, `AWS_APPLY_ROLE_ARN` |
+| Trivy 예외 | `.trivyignore` (EKS public 엔드포인트 등 설계상 필요한 것만, 사유 포함) |
+
+로컬 `terraform plan` 은 언제든 돌려도 된다(`-lock=false` 권장). **로컬 apply 는 CI 가 고장 났을 때만** 한다.
+
+### bootstrap (이미 완료, 다시 할 일 없음)
 
 ```bash
-cd terraform
-cp terraform.tfvars.example terraform.tfvars   # 필요하면 수정
-terraform init
-terraform plan
-terraform apply
+cd bootstrap && terraform init && terraform apply     # AWS_PROFILE=acc
+gh variable set AWS_PLAN_ROLE_ARN  -b "$(terraform output -json role_arns | jq -r .plan)"
+gh variable set AWS_APPLY_ROLE_ARN -b "$(terraform output -json role_arns | jq -r .apply)"
+```
 
-$(terraform output -raw configure_kubectl)     # 관리자 kubeconfig 등록
+bootstrap state 는 `bootstrap/terraform.tfstate` 로컬 파일이다(커밋 안 함). 잃어버려도 리소스는 남아 있고 `terraform import` 로 되살릴 수 있다.
+
+## 1-1. 클러스터 생성·확인 (약 20분, 이때부터 과금)
+
+생성은 이 레포 main 에 `terraform/` 변경이 머지되면 apply.yml 이 한다. 처음 생성은 PR 머지 또는 Actions → apply → Run workflow.
+
+생성 후 운영진 PC 에서:
+
+```bash
+$(terraform -chdir=terraform output -raw configure_kubectl)   # 관리자 kubeconfig 등록
 kubectl get nodes                              # 2대 Ready
 kubectl get nodes -o jsonpath='{.items[*].status.allocatable.pods}'; echo   # 110 110
 kubectl -n kube-system get deploy aws-load-balancer-controller              # 2/2
@@ -45,6 +75,8 @@ kubectl get storageclass                       # gp3 (default)
 ```
 
 `gp2`에도 `(default)`가 붙어 있으면 해제: `kubectl annotate storageclass gp2 storageclass.kubernetes.io/is-default-class-`
+
+클러스터 관리자는 `terraform/variables.tf` 의 `cluster_admin_arns` 에 IAM ARN 을 추가하는 PR 로 늘린다.
 
 ## 2. 팀 온보딩
 
@@ -74,7 +106,7 @@ unset KUBECONFIG
 | 팀 사용량 | `kubectl get resourcequota -A` |
 | ALB 문제 | `kubectl -n kube-system logs deploy/aws-load-balancer-controller --tail=50` |
 | 토큰 재발급 (3팀) | `kubectl -n container-3 delete secret team-deployer-token && ./scripts/onboard-teams.sh 3` |
-| 실습 없는 기간 노드 0대 | `terraform apply -var node_count=0` (컨트롤 플레인·NAT 요금은 계속) |
+| 실습 없는 기간 노드 0대 | `variables.tf` 의 `node_count` 기본값을 0 으로 바꾸는 PR (컨트롤 플레인·NAT 요금은 계속) |
 
 ## 4. 종료 (11/30)
 
@@ -82,10 +114,10 @@ ALB와 EBS는 쿠버네티스가 만든 AWS 리소스라서 **팀 리소스를 �
 
 ```bash
 for i in 1 2 3 4 5; do kubectl delete namespace container-$i; done
-aws elbv2 describe-load-balancers --region ap-northeast-2 --profile acc \
+aws elbv2 describe-load-balancers --region ap-northeast-2 \
   --query "LoadBalancers[?contains(LoadBalancerName,'sbgdemo')].LoadBalancerName"   # [] 가 될 때까지 대기
 kubectl get pv                      # 비어 있어야 함
-cd terraform && terraform destroy
+cd terraform && terraform destroy     # 종료는 CI 가 아니라 운영진 PC 에서 (AWS_PROFILE=acc)
 ```
 
 끝나고 콘솔에서 EC2 로드밸런서 / 볼륨 / 탄력적 IP, VPC NAT 게이트웨이 잔여물이 없는지 확인한다.
@@ -96,7 +128,7 @@ EKS $0.10/h + t3.medium 2대 약 $0.10/h + NAT 약 $0.06/h + ALB 약 $0.02/h ≈
 
 ## 알려진 한계
 
-- state는 로컬 파일이다. 운영진 여러 명이 apply 하게 되면 S3 backend로 옮긴다.
+- apply 역할은 관리자 권한이다. main 에 push 할 수 있는 사람 = AWS 관리자이므로 레포 쓰기 권한을 운영진으로 한정한다.
 - 팀 토큰은 만료가 없고 팀 공용이다. 실습 종료 시 네임스페이스 삭제로 회수한다.
 - 팀 간 네트워크는 열려 있다(NetworkPolicy 없음).
 - 팀 Ingress 의 alb annotation 은 허용 목록(group.name=sbg-demo, scheme=internet-facing, target-type=ip 고정 + `/<ns>` 아래 healthcheck-path)만 통과하고, tls·host 는 쓸 수 없다.
