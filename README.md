@@ -101,6 +101,8 @@ sed s/TEAM/container-1/g k8s/smoke.yaml | kubectl delete -f -
 unset KUBECONFIG
 ```
 
+공용 ALB 주소 고정 (1회): `kubectl apply -f k8s/ops-landing.yaml` → `kubectl -n acc-ops get ingress landing` 의 ADDRESS 를 공지한다. 이 Ingress 가 남아 있는 한 팀 배포 여부와 상관없이 ALB 주소가 바뀌지 않는다.
+
 `out/*.kubeconfig`는 토큰이 평문이다. **팀장에게 DM으로만** 보낸다. ALB 주소와 팀 path(`/container-N`)도 같이 공지한다.
 
 ## 3. 운영 중
@@ -117,7 +119,7 @@ unset KUBECONFIG
 ALB와 EBS는 쿠버네티스가 만든 AWS 리소스라서 **팀 리소스를 먼저 지워야** 고아로 남지 않는다.
 
 ```bash
-for i in 1 2 3 4 5; do kubectl delete namespace container-$i; done
+for ns in container-1 container-2 container-3 container-4 container-5 acc-ops; do kubectl delete namespace $ns; done
 aws elbv2 describe-load-balancers --region ap-northeast-2 \
   --query "LoadBalancers[?contains(LoadBalancerName,'sbgdemo')].LoadBalancerName"   # [] 가 될 때까지 대기
 kubectl get pv                      # 비어 있어야 함

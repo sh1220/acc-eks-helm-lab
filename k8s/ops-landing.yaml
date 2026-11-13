@@ -1,0 +1,62 @@
+# 공용 ALB 주소 고정용 안내 앱 (운영진 관리, kubectl apply -f k8s/ops-landing.yaml)
+# 공용 ALB 는 마지막 Ingress 가 지워지면 같이 지워지고 다시 만들면 주소가 바뀐다.
+# 이 Ingress 가 항상 하나 남아 있어서 팀 배포 여부와 상관없이 ALB 주소가 유지된다.
+# 경로는 /acc-ops 라서 팀 경로(/container-N)와 겹치지 않는다. 팀 정책(acc-team-*) 대상 아님.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: acc-ops
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: landing, namespace: acc-ops }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: landing } }
+  template:
+    metadata: { labels: { app: landing } }
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: echo
+          image: hashicorp/http-echo:1.0
+          args: ["-text=ACC EKS Helm lab: teams use /container-1 ~ /container-5", "-listen=:5678"]
+          ports: [{ containerPort: 5678 }]
+          resources:
+            requests: { cpu: 10m, memory: 16Mi }
+            limits: { cpu: 50m, memory: 32Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: ["ALL"] }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: landing, namespace: acc-ops }
+spec:
+  selector: { app: landing }
+  ports: [{ port: 80, targetPort: 5678 }]
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: landing
+  namespace: acc-ops
+  annotations:
+    alb.ingress.kubernetes.io/group.name: sbg-demo
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/healthcheck-path: /acc-ops
+spec:
+  ingressClassName: alb
+  rules:
+    - http:
+        paths:
+          - path: /acc-ops
+            pathType: Prefix
+            backend: { service: { name: landing, port: { number: 80 } } }
