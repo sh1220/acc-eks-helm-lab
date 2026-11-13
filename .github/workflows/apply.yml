@@ -1,0 +1,70 @@
+# main 머지 시 적용. homelab-infra / 칠삼이 Infra 레포 방식을 따른다.
+#   Trivy CRITICAL 게이트 → terraform apply
+# AWS 접속은 GitHub OIDC → acc-eks-gha-apply 역할(관리자, main 브랜치에서만 assume 가능)
+name: apply
+
+on:
+  push:
+    branches: [main]
+    paths: ["terraform/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# state 잠금(S3 lockfile)이 있지만, 머지가 연달아 오면 실패 대신 순서대로 적용되게 큐로 세운다
+concurrency:
+  group: apply
+  cancel-in-progress: false
+
+env:
+  TF_VERSION: "1.11.4"
+  AWS_REGION: ap-northeast-2
+
+jobs:
+  security:
+    # workflow_dispatch 는 아무 브랜치나 고를 수 있다 → main 만 (역할 신뢰 정책도 main 만 허용)
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: config
+          scan-ref: .
+          format: table
+          severity: CRITICAL
+          exit-code: "1"
+          trivyignores: .trivyignore
+
+  apply:
+    needs: security
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60 # 클러스터 생성 약 20분
+    permissions:
+      contents: read
+      id-token: write # OIDC
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_APPLY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-duration-seconds: 7200
+      - name: terraform apply
+        run: |
+          set -o pipefail # 없으면 tee 가 apply 실패를 가린다
+          terraform -chdir=terraform init -input=false >/dev/null
+          terraform -chdir=terraform apply -auto-approve -input=false -no-color -lock-timeout=5m | tee apply.txt
+          {
+            echo "## apply ✅ — \`${GITHUB_SHA::7}\` · @${GITHUB_ACTOR}"
+            grep -E '^Apply complete' apply.txt || true
+            echo; echo '| output | value |'; echo '|---|---|'
+            terraform -chdir=terraform output -json | jq -r 'to_entries[] | "| \(.key) | \(.value.value | tostring) |"'
+            echo; echo '<details><summary>전체 로그</summary>'; echo; echo '```'; tail -c 50000 apply.txt; echo '```'; echo '</details>'
+          } >> "$GITHUB_STEP_SUMMARY"

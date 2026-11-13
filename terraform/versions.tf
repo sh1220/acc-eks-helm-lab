@@ -7,5 +7,11 @@ terraform {
     kubernetes = { source = "hashicorp/kubernetes", version = "~> 3.0" }
   }
 
-  # ponytail: 로컬 state. 운영진 여러 명이 apply 하게 되면 S3 backend(use_lockfile)로 옮긴다.
+  # 버킷은 bootstrap/ 이 만든다. 로컬에서 돌릴 때는 AWS_PROFILE=acc
+  backend "s3" {
+    bucket       = "acc-eks-helm-lab-tfstate-384325768399"
+    key          = "eks/terraform.tfstate"
+    region       = "ap-northeast-2"
+    use_lockfile = true
+  }
 }

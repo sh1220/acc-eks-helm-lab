@@ -1,0 +1,9 @@
+# 설계상 필요한 예외. 추가할 때는 사유를 같이 적는다.
+
+# EKS API public 엔드포인트, 0.0.0.0/0: 동아리원이 각자 PC(고정 IP 없음)에서 kubectl/helm 으로 접속한다.
+# 인증은 팀별 ServiceAccount 토큰 + ns 범위 RBAC 로 한다. 실습 종료(11/30) 시 클러스터 삭제.
+AVD-AWS-0040
+AVD-AWS-0041
+
+# 노드·클러스터 보안그룹 egress 전체 허용(EKS 모듈 기본값): 노드가 GHCR/Docker Hub 이미지와 AWS API 에 NAT 로 나간다.
+AVD-AWS-0104
